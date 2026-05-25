@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>osu! Avatar Gallery</title>
+    <style>
+        /* ═══════════════════════════════════════════════════════════
+           VARIABLES CSS PARA TEMAS
+           ═══════════════════════════════════════════════════════════ */
+        :root {
+            /* 🌙 Tema Oscuro (por defecto) */
+            --bg-primary: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            --bg-secondary: rgba(255, 255, 255, 0.1);
+            --bg-card: rgba(255, 255, 255, 0.1);
+            --bg-card-hover: rgba(255, 255, 255, 0.15);
+            
+            --text-primary: #ffffff;
+            --text-secondary: #aaa;
+            --text-muted: #666;
+            
+            --accent-primary: #ff66aa;
+            --accent-secondary: #ff85c1;
+            --accent-glow: rgba(255, 102, 170, 0.4);
+            
+            --border-color: transparent;
+            --border-hover: #ff66aa;
+            
+            --rate-limit-bg: rgba(255, 255, 255, 0.2);
+            --rate-limit-fill: linear-gradient(90deg, #ff66aa, #ff85c1);
+            --rate-limit-warning: #ffa500;
+            --rate-limit-danger: #ff4444;
+            
+            --shadow-card: 0 10px 30px rgba(255, 102, 170, 0.3);
+            --shadow-text: 0 0 20px #ff66aa;
+            
+            --scrollbar-thumb: #ff66aa;
+            --scrollbar-track: #1a1a2e;
+        }
+
+        /* ☀️ Tema Claro */
+        [data-theme="light"] {
+            --bg-primary: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            --bg-secondary: rgba(0, 0, 0, 0.05);
+            --bg-card: rgba(255, 255, 255, 0.9);
+            --bg-card-hover: rgba(255, 255, 255, 1);
+            
+            --text-primary: #1a1a2e;
+            --text-secondary: #555;
+            --text-muted: #888;
+            
+            --accent-primary: #e83e8c;
+            --accent-secondary: #d63384;
+            --accent-glow: rgba(232, 62, 140, 0.3);
+            
+            --border-color: rgba(0, 0, 0, 0.1);
+            --border-hover: #e83e8c;
+            
+            --rate-limit-bg: rgba(0, 0, 0, 0.1);
+            --rate-limit-fill: linear-gradient(90deg, #e83e8c, #d63384);
+            --rate-limit-warning: #fd7e14;
+            --rate-limit-danger: #dc3545;
+            
+            --shadow-card: 0 10px 30px rgba(232, 62, 140, 0.2);
+            --shadow-text: 0 0 20px rgba(232, 62, 140, 0.5);
+            
+            --scrollbar-thumb: #e83e8c;
+            --scrollbar-track: #f5f7fa;
+        }
+
+        /* ═══════════════════════════════════════════════════════════
+           ESTILOS BASE
+           ═══════════════════════════════════════════════════════════ */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-primary);
+            min-height: 100vh;
+            padding: 20px;
+            color: var(--text-primary);
+            transition: background 0.4s ease, color 0.4s ease;
+        }
+
+        /* Scrollbar personalizado */
+        ::-webkit-scrollbar { width: 10px; }
+        ::-webkit-scrollbar-track { background: var(--scrollbar-track); }
+        ::-webkit-scrollbar-thumb { 
+            background: var(--scrollbar-thumb); 
+            border-radius: 5px;
+        }
+        ::-webkit-scrollbar-thumb:hover { background: var(--accent-secondary); }
+
+        /* ═══════════════════════════════════════════════════════════
+           HEADER
+           ═══════════════════════════════════════════════════════════ */
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            position: relative;
+        }
+
+        h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            text-shadow: var(--shadow-text);
+            transition: text-shadow 0.4s ease;
+        }
+
+        header p {
+            color: var(--text-secondary);
+            font-size: 1.1em;
+        }
+
+        /* Toggle de tema */
+        .theme-toggle {
+            position: absolute;
+            top: 0;
+            right: 0;
+            padding: 10px 15px;
+            background: var(--bg-secondary);
+            border: 2px solid var(--border-color);
+            border-radius: 25px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-primary);
+            font-size: 14px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .theme-toggle:hover {
+            border-color: var(--border-hover);
+            transform: scale(1.05);
+        }
+
+        .theme-toggle svg {
+            width: 20px;
+            height: 20px;
+            transition: transform 0.4s ease;
+        }
+
+        [data-theme="light"] .theme-toggle .moon { display: none; }
+        [data-theme="dark"] .theme-toggle .sun { display: none; }
+
+        /* ═══════════════════════════════════════════════════════════
+           CONTROLES Y BARRAS
+           ═══════════════════════════════════════════════════════════ */
+        .rate-limit-info {
+            background: var(--bg-secondary);
+            padding: 10px 20px;
+            border-radius: 8px;
+            color: var(--text-primary);
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 14px;
+            border: 1px solid var(--border-color);
+            transition: background 0.4s ease, border-color 0.4s ease;
+        }
+
+        .rate-limit-bar {
+            height: 6px;
+            background: var(--rate-limit-bg);
+            border-radius: 3px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+
+        .rate-limit-fill {
+            height: 100%;
+            background: var(--rate-limit-fill);
+            border-radius: 3px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        .rate-limit-fill.warning { background: var(--rate-limit-warning); }
+        .rate-limit-fill.danger { background: var(--rate-limit-danger); }
+
+        .cache-stats {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            color: var(--text-secondary);
+            font-size: 13px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 12px 24px;
+            font-size: 16px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            cursor: pointer;
+            background: var(--accent-primary);
+            color: white;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background: var(--accent-secondary);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-card);
+            border-color: var(--border-hover);
+        }
+
+        button:disabled {
+            background: var(--text-muted);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* ═══════════════════════════════════════════════════════════
+           GALERÍA DE AVATARES
+           ═══════════════════════════════════════════════════════════ */
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .avatar-card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 10px;
+            text-align: center;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            border: 2px solid var(--border-color);
+        }
+
+        .avatar-card:hover {
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: var(--shadow-card);
+            border-color: var(--border-hover);
+            background: var(--bg-card-hover);
+        }
+
+        .avatar-card img {
+            width: 100%;
+            aspect-ratio: 1;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            transition: filter 0.3s ease;
+        }
+
+        .avatar-card:hover img {
+            filter: brightness(1.1);
+        }
+
+        .username {
+            color: var(--text-primary);
+            font-size: 14px;
+            font-weight: 600;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .user-id {
+            color: var(--text-secondary);
+            font-size: 12px;
+            margin-top: 4px;
+        }
+
+        /* ═══════════════════════════════════════════════════════════
+           ESTADOS Y UTILIDADES
+           ═══════════════════════════════════════════════════════════ */
+        .loading {
+            text-align: center;
+            color: var(--text-primary);
+            font-size: 1.2em;
+            margin-top: 40px;
+        }
+
+        .stats {
+            text-align: center;
+            color: var(--text-primary);
+            margin-bottom: 20px;
+            font-size: 1.1em;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .loading-text {
+            animation: pulse 1.5s infinite;
+        }
+
+        /* ═══════════════════════════════════════════════════════════
+           FOOTER
+           ═══════════════════════════════════════════════════════════ */
+        footer {
+            text-align: center;
+            padding: 30px 20px 50px;
+            color: var(--text-muted);
+            font-size: 12px;
+            margin-top: 40px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        footer a {
+            color: var(--accent-primary);
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* ═══════════════════════════════════════════════════════════
+           RESPONSIVE
+           ═══════════════════════════════════════════════════════════ */
+        @media (max-width: 768px) {
+            h1 { font-size: 2em; }
+            .controls { flex-direction: column; align-items: center; }
+            button { width: 100%; max-width: 250px; }
+            .gallery { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+        }
+
+        /* ═══════════════════════════════════════════════════════════
+           ANIMACIÓN DE CAMBIO DE TEMA
+           ═══════════════════════════════════════════════════════════ */
+        ::view-transition-old(root),
+        ::view-transition-new(root) {
+            animation: none;
+            mix-blend-mode: normal;
+        }
+
+        @supports not (view-transition-name: none) {
+            [data-theme] * {
+                transition: background-color 0.4s ease, 
+                           color 0.4s ease, 
+                           border-color 0.4s ease,
+                           box-shadow 0.4s ease !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>🎮 osu! Avatar Gallery</h1>
+        <p>Explora avatares de jugadores aleatorios de osu!</p>
+        
+        <!-- Toggle de tema -->
+        <button class="theme-toggle" onclick="toggleTheme()" aria-label="Cambiar tema">
+            <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="5"/>
+                <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+            </svg>
+            <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+            </svg>
+            <span id="themeText">Oscuro</span>
+        </button>
+    </header>
+
+    <!-- Indicador de Rate Limit -->
+    <div class="rate-limit-info">
+        <div>Requests API: <span id="rateLimitText">0/60 por minuto</span></div>
+        <div class="rate-limit-bar">
+            <div class="rate-limit-fill" id="rateLimitFill"></div>
+        </div>
+    </div>
+
+    <!-- Estadísticas de Caché -->
+    <div class="cache-stats">
+        <span>🗄️ Caché: <span id="cacheCount">0</span> usuarios</span>
+        <span>⚡ Hits: <span id="cacheHits">0</span>/<span id="cacheTotal">0</span></span>
+        <span>🔄 Tamaño: <span id="cacheSize">0 KB</span></span>
+    </div>
+
+    <div class="controls">
+        <button onclick="loadRandomAvatars()" id="loadBtn">✨ Cargar Avatares</button>
+        <button onclick="loadMore()">📥 Cargar Más</button>
+        <button onclick="clearGallery()">🗑️ Limpiar Galería</button>
+        <button onclick="clearCache()">💾 Limpiar Caché</button>
+    </div>
+
+    <div class="stats" id="stats"></div>
+    <div class="gallery" id="gallery"></div>
+    <div class="loading" id="loading" style="display: none;">
+        <div class="loading-text" id="loadingText">Cargando avatares...</div>
+    </div>
+
+    <script>
+        // ═══════════════════════════════════════════════════════════
+        // CONFIGURACIÓN
+        // ═══════════════════════════════════════════════════════════
+        const CONFIG = {
+            CLIENT_ID: '57816',
+            CLIENT_SECRET: 'cgvt3XYLPuvL3VmVyQSnjvHovXvvIrVI35ZLb5KY',
+            RATE_LIMIT_MAX: 55,
+            RATE_LIMIT_WINDOW: 60 * 1000,
+            CACHE_ENABLED: true,
+            CACHE_TTL: 24 * 60 * 60 * 1000,
+            CACHE_MAX_ENTRIES: 500,
+            CACHE_PREFIX: 'osu_avatar_cache_',
+            USER_ID_MIN: 1,
+            USER_ID_MAX: 20000000,
+            BATCH_SIZE: 20,
+            REQUEST_DELAY: 150,
+            // 🎨 Configuración del tema
+            THEME_KEY: 'osu_gallery_theme',
+            DEFAULT_THEME: 'dark'
+        };
+
+        // ═══════════════════════════════════════════════════════════
+        // GESTOR DE TEMA (DARK/LIGHT MODE)
+        // ═══════════════════════════════════════════════════════════
+        class ThemeManager {
+            constructor(config) {
+                this.key = config.THEME_KEY;
+                this.defaultTheme = config.DEFAULT_THEME;
+                this.html = document.documentElement;
+            }
+
+            // Inicializar tema al cargar
+            init() {
+                const saved = localStorage.getItem(this.key);
+                const preferred = saved || this._getSystemPreference();
+                this.setTheme(preferred);
+                this._updateButtonText();
+            }
+
+            // Detectar preferencia del sistema
+            _getSystemPreference() {
+                if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+                    return 'light';
+                }
+                return 'dark';
+            }
+
+            // Cambiar tema
+            setTheme(theme) {
+                if (!['dark', 'light'].includes(theme)) return;
+                
+                // View Transition API para animación suave (Chrome 111+)
+                if (document.startViewTransition) {
+                    document.startViewTransition(() => {
+                        this._applyTheme(theme);
+                    });
+                } else {
+                    this._applyTheme(theme);
+                }
+                
+                localStorage.setItem(this.key, theme);
+                this._updateButtonText();
+                
+                // Evento personalizado para otros componentes
+                window.dispatchEvent(new CustomEvent('themeChanged', { detail: { theme } }));
+            }
+
+            // Aplicar tema al DOM
+            _applyTheme(theme) {
+                this.html.setAttribute('data-theme', theme);
+            }
+
+            // Alternar entre temas
+            toggle() {
+                const current = this.html.getAttribute('data-theme');
+                const next = current === 'dark' ? 'light' : 'dark';
+                this.setTheme(next);
+            }
+
+            // Obtener tema actual
+            get() {
+                return this.html.getAttribute('data-theme');
+            }
+
+            // Actualizar texto del botón
+            _updateButtonText() {
+                const text = document.getElementById('themeText');
+                const current = this.get();
+                if (text) {
+                    text.textContent = current === 'dark' ? 'Oscuro' : 'Claro';
+                }
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // SISTEMA DE RATE LIMITING
+        // ═══════════════════════════════════════════════════════════
+        class RateLimiter {
+            constructor(maxRequests, windowMs) {
+                this.maxRequests = maxRequests;
+                this.windowMs = windowMs;
+                this.requests = [];
+                this.uiElement = document.getElementById('rateLimitFill');
+                this.textElement = document.getElementById('rateLimitText');
+            }
+
+            _cleanup() {
+                const now = Date.now();
+                this.requests = this.requests.filter(time => now - time < this.windowMs);
+            }
+
+            canMakeRequest() {
+                this._cleanup();
+                return this.requests.length < this.maxRequests;
+            }
+
+            async acquire() {
+                this._cleanup();
+                
+                if (this.canMakeRequest()) {
+                    this.requests.push(Date.now());
+                    this._updateUI();
+                    return 0;
+                }
+                
+                const oldestRequest = this.requests[0];
+                const waitTime = this.windowMs - (Date.now() - oldestRequest) + 50;
+                console.log(`⏳ Rate limit: esperando ${Math.ceil(waitTime/1000)}s...`);
+                return waitTime;
+            }
+
+            _updateUI() {
+                const usage = (this.requests.length / this.maxRequests) * 100;
+                this.uiElement.style.width = `${Math.min(usage, 100)}%`;
+                this.textElement.textContent = `${this.requests.length}/${this.maxRequests} por minuto`;
+                
+                this.uiElement.className = 'rate-limit-fill';
+                if (usage > 80) this.uiElement.classList.add('danger');
+                else if (usage > 60) this.uiElement.classList.add('warning');
+            }
+
+            reset() {
+                this.requests = [];
+                this._updateUI();
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // SISTEMA DE CACHÉ
+        // ═══════════════════════════════════════════════════════════
+        class CacheManager {
+            constructor(config) {
+                this.prefix = config.CACHE_PREFIX;
+                this.ttl = config.CACHE_TTL;
+                this.maxEntries = config.CACHE_MAX_ENTRIES;
+                this.hits = 0;
+                this.total = 0;
+            }
+
+            _getKey(userId) { return `${this.prefix}${userId}`; }
+
+            set(userId, userData) {
+                if (!CONFIG.CACHE_ENABLED) return;
+                const entry = { data: userData, timestamp: Date.now() };
+                try {
+                    localStorage.setItem(this._getKey(userId), JSON.stringify(entry));
+                    this._manageSize();
+                } catch (e) {
+                    if (e.name === 'QuotaExceededError') {
+                        this._cleanupOld();
+                        try {
+                            localStorage.setItem(this._getKey(userId), JSON.stringify(entry));
+                        } catch (e2) { console.warn('⚠️ Caché llena:', e2); }
+                    }
+                }
+            }
+
+            get(userId) {
+                this.total++;
+                if (!CONFIG.CACHE_ENABLED) return null;
+                try {
+                    const item = localStorage.getItem(this._getKey(userId));
+                    if (!item) return null;
+                    const entry = JSON.parse(item);
+                    if (Date.now() - entry.timestamp > this.ttl) {
+                        this.remove(userId);
+                        return null;
+                    }
+                    this.hits++;
+                    this._updateStats();
+                    return entry.data;
+                } catch (e) { console.warn('⚠️ Error caché:', e); return null; }
+            }
+
+            remove(userId) { localStorage.removeItem(this._getKey(userId)); }
+
+            _manageSize() {
+                const keys = this._getAllKeys();
+                if (keys.length <= this.maxEntries) return;
+                const entries = keys.map(key => ({
+                    key, timestamp: JSON.parse(localStorage.getItem(key)).timestamp
+                })).sort((a, b) => a.timestamp - b.timestamp);
+                entries.slice(0, keys.length - this.maxEntries)
+                    .forEach(entry => localStorage.removeItem(entry.key));
+            }
+
+            _cleanupOld() {
+                this._getAllKeys().forEach(key => {
+                    try {
+                        const entry = JSON.parse(localStorage.getItem(key));
+                        if (Date.now() - entry.timestamp > this.ttl) {
+                            localStorage.removeItem(key);
+                        }
+                    } catch (e) { localStorage.removeItem(key); }
+                });
+            }
+
+            _getAllKeys() {
+                return Object.keys(localStorage).filter(k => k.startsWith(this.prefix));
+            }
+
+            getStats() {
+                const keys = this._getAllKeys();
+                const size = keys.reduce((acc, key) => {
+                    const item = localStorage.getItem(key);
+                    return acc + (item ? item.length : 0);
+                }, 0);
+                return {
+                    count: keys.length,
+                    hits: this.hits,
+                    total: this.total,
+                    hitRate: this.total > 0 ? ((this.hits / this.total) * 100).toFixed(1) : 0,
+                    sizeKB: (size / 1024).toFixed(1)
+                };
+            }
+
+            _updateStats() {
+                const stats = this.getStats();
+                document.getElementById('cacheCount').textContent = stats.count;
+                document.getElementById('cacheHits').textContent = stats.hits;
+                document.getElementById('cacheTotal').textContent = stats.total;
+                document.getElementById('cacheSize').textContent = `${stats.sizeKB} KB`;
+            }
+
+            clear() {
+                this._getAllKeys().forEach(key => localStorage.removeItem(key));
+                this.hits = 0; this.total = 0;
+                this._updateStats();
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // CLIENTE API OSU!
+        // ═══════════════════════════════════════════════════════════
+        class OsuApiClient {
+            constructor(config) {
+                this.clientId = config.CLIENT_ID;
+                this.clientSecret = config.CLIENT_SECRET;
+                this.baseUrl = 'https://osu.ppy.sh/api/v2';
+                this.token = null;
+                this.tokenExpiry = null;
+            }
+
+            async getAccessToken() {
+                if (this.token && this.tokenExpiry && Date.now() < this.tokenExpiry) {
+                    return this.token;
+                }
+                const response = await fetch('https://osu.ppy.sh/oauth/token', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify({
+                        client_id: this.clientId,
+                        client_secret: this.clientSecret,
+                        grant_type: 'client_credentials',
+                        scope: 'public'
+                    })
+                });
+                if (!response.ok) throw new Error(`Auth error: ${response.status}`);
+                const data = await response.json();
+                this.token = data.access_token;
+                this.tokenExpiry = Date.now() + (data.expires_in - 300) * 1000;
+                return this.token;
+            }
+
+            async fetchUser(userId) {
+                const token = await this.getAccessToken();
+                const response = await fetch(`${this.baseUrl}/users/${userId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                });
+                if (response.status === 404) return null;
+                if (response.status === 429) {
+                    const retryAfter = response.headers.get('Retry-After');
+                    const waitTime = retryAfter ? parseInt(retryAfter) * 1000 : 60000;
+                    throw new Error(`RATE_LIMITED:${waitTime}`);
+                }
+                if (!response.ok) throw new Error(`API Error: ${response.status}`);
+                return await response.json();
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // INICIALIZACIÓN
+        // ═══════════════════════════════════════════════════════════
+        const themeManager = new ThemeManager(CONFIG);
+        const rateLimiter = new RateLimiter(CONFIG.RATE_LIMIT_MAX, CONFIG.RATE_LIMIT_WINDOW);
+        const cache = new CacheManager(CONFIG);
+        const api = new OsuApiClient(CONFIG);
+
+        const state = {
+            loadedUserIds: new Set(),
+            totalLoaded: 0,
+            isLoading: false
+        };
+
+        // ═══════════════════════════════════════════════════════════
+        // FUNCIONES DE TEMA
+        // ═══════════════════════════════════════════════════════════
+        function toggleTheme() {
+            themeManager.toggle();
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // FUNCIONES PRINCIPALES
+        // ═══════════════════════════════════════════════════════════
+        function generateRandomUserId() {
+            return Math.floor(Math.random() * (CONFIG.USER_ID_MAX - CONFIG.USER_ID_MIN + 1)) + CONFIG.USER_ID_MIN;
+        }
+
+        async function fetchUserWithCache(userId) {
+            const cached = cache.get(userId);
+            if (cached) {
+                console.log(`✅ Caché hit: #${userId}`);
+                return cached;
+            }
+
+            const waitTime = await rateLimiter.acquire();
+            if (waitTime > 0) {
+                document.getElementById('loadingText').textContent = `Esperando ${Math.ceil(waitTime/1000)}s por rate limit...`;
+                await new Promise(resolve => setTimeout(resolve, waitTime));
+            }
+
+            await new Promise(resolve => setTimeout(resolve, CONFIG.REQUEST_DELAY));
+
+            try {
+                const userData = await api.fetchUser(userId);
+                if (userData) cache.set(userId, userData);
+                return userData;
+            } catch (error) {
+                if (error.message.startsWith('RATE_LIMITED:')) {
+                    const waitTime = parseInt(error.message.split(':')[1]);
+                    console.log(`🚫 Rate limit servidor, esperando ${waitTime}ms`);
+                    await new Promise(resolve => setTimeout(resolve, waitTime));
+                    return fetchUserWithCache(userId);
+                }
+                console.warn(`⚠️ Error user ${userId}:`, error.message);
+                return null;
+            }
+        }
+
+        async function loadRandomAvatars(count = CONFIG.BATCH_SIZE) {
+            if (state.isLoading) return;
+            state.isLoading = true;
+            
+            const loading = document.getElementById('loading');
+            const loadBtn = document.getElementById('loadBtn');
+            
+            loading.style.display = 'block';
+            loadBtn.disabled = true;
+            document.getElementById('loadingText').textContent = 'Buscando usuarios...';
+
+            let loaded = 0;
+            let attempts = 0;
+            const maxAttempts = count * 3;
+
+            while (loaded < count && attempts < maxAttempts) {
+                attempts++;
+                const userId = generateRandomUserId();
+                if (state.loadedUserIds.has(userId)) continue;
+
+                const userData = await fetchUserWithCache(userId);
+                
+                if (userData) {
+                    state.loadedUserIds.add(userId);
+                    addAvatarToGallery(userData);
+                    state.totalLoaded++;
+                    loaded++;
+                    if (loaded % 5 === 0) {
+                        updateStats();
+                        cache._updateStats();
+                    }
+                }
+            }
+
+            updateStats();
+            cache._updateStats();
+            loading.style.display = 'none';
+            loadBtn.disabled = false;
+            state.isLoading = false;
+            
+            if (loaded === 0) {
+                alert('⚠️ No se pudieron cargar avatares. Verifica tus credenciales.');
+            }
+        }
+
+        function addAvatarToGallery(user) {
+            const gallery = document.getElementById('gallery');
+            const card = document.createElement('div');
+            card.className = 'avatar-card';
+            card.innerHTML = `
+                <a href="https://osu.ppy.sh/users/${user.id}" target="_blank" rel="noopener noreferrer">
+                    <img src="${user.avatar_url}" alt="Avatar de ${user.username}" loading="lazy" 
+                         onerror="this.src='https://a.ppy.sh/blank.jpg'">
+                </a>
+                <div class="username" title="${user.username}">${user.username}</div>
+                <div class="user-id">#${user.id}</div>
+            `;
+            
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            gallery.insertBefore(card, gallery.firstChild);
+            
+            requestAnimationFrame(() => {
+                card.style.transition = 'opacity 0.3s, transform 0.3s';
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
+            });
+        }
+
+        function loadMore() { loadRandomAvatars(CONFIG.BATCH_SIZE); }
+        
+        function clearGallery() {
+            document.getElementById('gallery').innerHTML = '';
+            state.loadedUserIds.clear();
+            state.totalLoaded = 0;
+            updateStats();
+        }
+
+        function clearCache() {
+            if (confirm('¿Limpiar toda la caché? Esto aumentará los requests a la API.')) {
+                cache.clear();
+                alert('✅ Caché limpiada');
+            }
+        }
+
+        function updateStats() {
+            document.getElementById('stats').textContent = `Avatares únicos cargados: ${state.totalLoaded}`;
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // EVENTOS DE INICIALIZACIÓN
+        // ═══════════════════════════════════════════════════════════
+        window.addEventListener('load', () => {
+            // Inicializar tema PRIMERO (importante para evitar FOUC)
+            themeManager.init();
+            
+            // Actualizar UI
+            cache._updateStats();
+            rateLimiter._updateUI();
+            
+            if (CONFIG.CLIENT_ID === 'TU_CLIENT_ID') {
+                document.getElementById('loading').style.display = 'block';
+                document.getElementById('loadingText').innerHTML = `
+                    ⚠️ <strong>Configuración requerida</strong><br><br>
+                    Edita el archivo HTML y reemplaza:<br>
+                    • CLIENT_ID<br>
+                    • CLIENT_SECRET<br><br>
+                    <a href="https://osu.ppy.sh/home/account/edit" target="_blank" 
+                       style="color:var(--accent-primary)">Obtener credenciales</a>
+                `;
+                document.getElementById('loadBtn').disabled = true;
+            } else {
+                loadRandomAvatars(CONFIG.BATCH_SIZE);
+            }
+        });
+
+        // Actualizar rate limiter periódicamente
+        setInterval(() => {
+            rateLimiter._cleanup();
+            rateLimiter._updateUI();
+        }, 10000);
+
+        // Escuchar cambios de preferencia del sistema
+        if (window.matchMedia) {
+            window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', e => {
+                // Solo cambiar si el usuario no ha establecido preferencia manual
+                if (!localStorage.getItem(CONFIG.THEME_KEY)) {
+                    themeManager.setTheme(e.matches ? 'light' : 'dark');
+                }
+            });
+        }
+
+        // Footer con atribución
+        document.body.insertAdjacentHTML('beforeend', `
+            <footer>
+                <p>
+                    🎮 Fan project • Not affiliated with osu! or ppy<br>
+                    <a href="https://osu.ppy.sh/docs/#terms-of-use" target="_blank">Terms of Use</a>
+                    • Avatares propiedad de sus respectivos usuarios
+                </p>
+            </footer>
+        `);
+    </script>
+</body>
+</html>
